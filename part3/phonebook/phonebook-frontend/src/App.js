@@ -37,14 +37,13 @@ const App = () => {
                 name: newName,
                 number: newNumber
             }
-            personService.create(personObject).then(returnedPerson => {
+
                 personService.create(personObject)
                     .then(returnedPerson => {
                         setPersons(persons.concat(returnedPerson))
                         setNotificationMessage(`Added ${returnedPerson.name}`)
                         clearMessageAfterSeconds()
-                    })
-            }).catch(error => {
+                    }).catch(error => {
                 setNotificationMessage(error.response.data.error)
                 clearMessageAfterSeconds()
             })
