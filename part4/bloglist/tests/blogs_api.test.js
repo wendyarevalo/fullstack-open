@@ -51,53 +51,70 @@ describe('when there is initially some blogs saved', () => {
     })
 })
 
-test('verify id exists', async () => {
-    const blog = {
-        title: 'React patterns 2',
-        author: 'Michael Chan',
-        url: 'https://reactpatterns.com/',
-        likes: 7,
-    }
+describe('posting a blog', () => {
+    test('verify id exists', async () => {
+        const blog = {
+            title: 'React patterns 2',
+            author: 'Michael Chan',
+            url: 'https://reactpatterns.com/',
+            likes: 7,
+        }
 
-    const login = await api
-        .post('/api/login')
-        .send({ username: 'root', password: 'sekret' })
-        .expect(200)
+        const login = await api
+            .post('/api/login')
+            .send({username: 'root', password: 'sekret'})
+            .expect(200)
 
-    const response = await api
-        .post('/api/blogs')
-        .send(blog)
-        .set('Authorization', `Bearer ${login.body.token}`)
-    expect(response.body.id).toBeDefined()
-})
+        const response = await api
+            .post('/api/blogs')
+            .send(blog)
+            .set('Authorization', `Bearer ${login.body.token}`)
+        expect(response.body.id).toBeDefined()
+    })
 
-test('successfully creates a new blog', async () => {
+    test('successfully creates a new blog', async () => {
 
-    const login = await api
-        .post('/api/login')
-        .send({ username: 'root', password: 'sekret' })
-        .expect(200)
+        const login = await api
+            .post('/api/login')
+            .send({username: 'root', password: 'sekret'})
+            .expect(200)
 
-    const blog = {
-        title: 'React patterns 3',
-        author: 'Michael Chan',
-        url: 'https://reactpatterns.com/',
-        likes: 7
-    }
-    await api
-        .post('/api/blogs')
-        .send(blog)
-        .set('Authorization', `Bearer ${login.body.token}`)
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
+        const blog = {
+            title: 'React patterns 3',
+            author: 'Michael Chan',
+            url: 'https://reactpatterns.com/',
+            likes: 7
+        }
+        await api
+            .post('/api/blogs')
+            .send(blog)
+            .set('Authorization', `Bearer ${login.body.token}`)
+            .expect(201)
+            .expect('Content-Type', /application\/json/)
 
-    const blogsAtEnd = await helper.blogsInDb()
-    expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length + 1)
+        const blogsAtEnd = await helper.blogsInDb()
+        expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length + 1)
 
-    const titles = blogsAtEnd.map(b => b.title)
-    expect(titles).toContain(
-        'React patterns 3'
-    )
+        const titles = blogsAtEnd.map(b => b.title)
+        expect(titles).toContain(
+            'React patterns 3'
+        )
+    })
+
+    test('does not succeed if token is not provided', async () => {
+
+        const blog = {
+            title: 'React patterns 3',
+            author: 'Michael Chan',
+            url: 'https://reactpatterns.com/',
+            likes: 7
+        }
+        await api
+            .post('/api/blogs')
+            .send(blog)
+            .expect(401)
+            .expect('Content-Type', /application\/json/)
+    })
 })
 
 describe('missing property', () => {
