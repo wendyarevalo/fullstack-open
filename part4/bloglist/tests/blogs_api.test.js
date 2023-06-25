@@ -11,13 +11,28 @@ const bcrypt = require('bcrypt')
 const User = require('../models/user')
 
 beforeEach(async () => {
+    await User.deleteMany({})
+
+    const passwordHash = await bcrypt.hash('sekret', 10)
+    const user = new User({ username: 'root', passwordHash })
+
+    const userObject = await user.save()
+
     await Blog.deleteMany({})
 
-    let blogObject = new Blog(helper.initialBlogs[0])
+    const blogObjects = helper.initialBlogs.map(blog => {
+        blog.user = userObject._id
+        return new Blog(blog)
+    })
+
+    let blogObject = blogObjects[0]
     await blogObject.save()
 
-    blogObject = new Blog(helper.initialBlogs[1])
+    blogObject = blogObjects[1]
     await blogObject.save()
+
+    userObject.blogs = blogObjects
+    await userObject.save()
 })
 
 describe('when there is initially some blogs saved', () => {
@@ -41,13 +56,28 @@ test('verify id exists', async () => {
         title: 'React patterns 2',
         author: 'Michael Chan',
         url: 'https://reactpatterns.com/',
-        likes: 7
+        likes: 7,
     }
-    const response = await api.post('/api/blogs').send(blog)
+
+    const login = await api
+        .post('/api/login')
+        .send({ username: 'root', password: 'sekret' })
+        .expect(200)
+
+    const response = await api
+        .post('/api/blogs')
+        .send(blog)
+        .set('Authorization', `Bearer ${login.body.token}`)
     expect(response.body.id).toBeDefined()
 })
 
 test('successfully creates a new blog', async () => {
+
+    const login = await api
+        .post('/api/login')
+        .send({ username: 'root', password: 'sekret' })
+        .expect(200)
+
     const blog = {
         title: 'React patterns 3',
         author: 'Michael Chan',
@@ -57,6 +87,7 @@ test('successfully creates a new blog', async () => {
     await api
         .post('/api/blogs')
         .send(blog)
+        .set('Authorization', `Bearer ${login.body.token}`)
         .expect(201)
         .expect('Content-Type', /application\/json/)
 
@@ -70,17 +101,31 @@ test('successfully creates a new blog', async () => {
 })
 
 describe('missing property', () => {
+
     test('"likes" defaults to 0', async () => {
+        const login = await api
+            .post('/api/login')
+            .send({username: 'root', password: 'sekret'})
+            .expect(200)
+
         const blog = {
             title: 'React patterns 4',
             author: 'Michael Chan',
             url: 'https://reactpatterns.com/',
         }
-        const response = await api.post('/api/blogs').send(blog)
+        const response = await api
+            .post('/api/blogs')
+            .send(blog)
+            .set('Authorization', `Bearer ${login.body.token}`)
         expect(response.body.likes).toBe(0)
     })
 
     test('"title" returns 400', async () => {
+        const login = await api
+            .post('/api/login')
+            .send({username: 'root', password: 'sekret'})
+            .expect(200)
+
         const blog = {
             author: 'Michael Chan',
             url: 'https://reactpatterns.com/',
@@ -88,6 +133,7 @@ describe('missing property', () => {
         await api
             .post('/api/blogs')
             .send(blog)
+            .set('Authorization', `Bearer ${login.body.token}`)
             .expect(400)
 
         const blogsAtEnd = await helper.blogsInDb()
@@ -98,11 +144,17 @@ describe('missing property', () => {
 
 describe('deletion of a blog', () => {
     test('succeeds with status code 204 if id is valid', async () => {
+        const login = await api
+            .post('/api/login')
+            .send({username: 'root', password: 'sekret'})
+            .expect(200)
+
         const blogsAtStart = await helper.blogsInDb()
         const blogToDelete = blogsAtStart[0]
 
         await api
             .delete(`/api/blogs/${blogToDelete.id}`)
+            .set('Authorization', `Bearer ${login.body.token}`)
             .expect(204)
 
         const blogsAtEnd = await helper.blogsInDb()
@@ -134,14 +186,6 @@ test('successfully updates a blog', async () => {
 })
 
 describe('when there is initially one user in db', () => {
-    beforeEach(async () => {
-        await User.deleteMany({})
-
-        const passwordHash = await bcrypt.hash('sekret', 10)
-        const user = new User({ username: 'root', passwordHash })
-
-        await user.save()
-    })
 
     test('creation succeeds with a fresh username', async () => {
         const usersAtStart = await helper.usersInDb()
