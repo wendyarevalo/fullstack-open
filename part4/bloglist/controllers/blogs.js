@@ -1,21 +1,15 @@
 const blogRouter = require('express').Router()
 const Blog = require('../models/blog')
-const User = require('../models/user')
-const jwt = require("jsonwebtoken")
 
 blogRouter.get('/', async (request, response) => {
-    const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 })
+    const blogs = await Blog.find({}).populate('user', {username: 1, name: 1})
     response.json(blogs)
 })
 
 blogRouter.post('/', async (request, response, next) => {
     const body = request.body
 
-    const decodedToken = jwt.verify(request.token, process.env.SECRET)
-    if (!decodedToken.id) {
-        return response.status(401).json({ error: 'token invalid' })
-    }
-    const user = await User.findById(decodedToken.id)
+    const user = request.user
 
     const blog = new Blog({
         title: body.title,
@@ -30,26 +24,24 @@ blogRouter.post('/', async (request, response, next) => {
         user.blogs = user.blogs.concat(savedBlog._id)
         await user.save()
         response.status(201).json(savedBlog)
-    } catch(exception) {
+    } catch (exception) {
         next(exception)
     }
 })
 
-blogRouter.delete('/:id', async (request, response) => {
+blogRouter.delete('/:id', async (request, response,next) => {
 
-    const decodedToken = jwt.verify(request.token, process.env.SECRET)
-    if (!decodedToken.id) {
-        return response.status(401).json({ error: 'token invalid' })
-    }
-    const user = await User.findById(decodedToken.id)
+    const user = request.user
 
     const blog = await Blog.findById(request.params.id)
 
-    if ( blog.user.toString() === user.id.toString() ){
-        await Blog.findByIdAndRemove(request.params.id)
-        response.status(204).end()
-    }else{
-        return response.status(401).json({ error: 'token invalid' })
+    try {
+        if (blog.user.toString() === user.id.toString()) {
+            await Blog.findByIdAndRemove(request.params.id)
+            response.status(204).end()
+        }
+    } catch (exception) {
+        next(exception)
     }
 
 })
