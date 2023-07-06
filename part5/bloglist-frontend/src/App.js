@@ -12,6 +12,7 @@ const App = () => {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [user, setUser] = useState(null)
+    const [update, setUpdate] = useState(null)
 
     const [notificationMessage, setNotificationMessage] = useState(null)
 
@@ -21,7 +22,7 @@ const App = () => {
         blogService.getAll().then(blogs =>
             setBlogs(blogs)
         )
-    }, [])
+    }, [update])
 
     const clearMessageAfterSeconds = () => setTimeout(() => {
         setNotificationMessage(null)
@@ -86,8 +87,9 @@ const App = () => {
 
     const blogPosts = () => (
         <div>
-            {blogs.map(blog =>
-                <Blog key={blog.id} blog={blog}/>
+            {blogs.sort((a, b) => b.likes - a.likes)
+                .map(blog =>
+                <Blog key={blog.id} blog={blog} user={user} setUpdate={setUpdate}/>
             )}
         </div>
     )
