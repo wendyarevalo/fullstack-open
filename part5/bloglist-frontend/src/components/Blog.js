@@ -1,30 +1,11 @@
 import { useState } from 'react'
-import blogService from '../services/blogs'
 
-const Blog = ({ blog, user, setUpdate }) => {
+const Blog = ({ blog, user, handleLikes, handleRemove }) => {
   const [visible, setVisible] = useState(false)
   const hideWhenVisible = { display: visible ? 'none' : '' }
   const showWhenVisible = { display: visible ? '' : 'none' }
   const toggleVisibility = () => {
     setVisible(!visible)
-  }
-
-  const handleLikes = async () => {
-    const newBlog = {
-      title: blog.title,
-      author: blog.author,
-      url: blog.url,
-      likes: blog.likes + 1
-    }
-    await blogService.update(blog.id, newBlog)
-    setUpdate(Math.random())
-  }
-  const handleRemove = async () => {
-    if (!window.confirm(`Remove blog "${blog.title}" by ${blog.author}`)) {
-      return
-    }
-    await blogService.deleteBlog(blog.id)
-    setUpdate(Math.random())
   }
 
   const blogStyle = {
@@ -37,18 +18,18 @@ const Blog = ({ blog, user, setUpdate }) => {
 
   return (
     <div style={blogStyle}>
-      <div style={hideWhenVisible}>
+      <div style={hideWhenVisible} className="blogCollapsedDiv">
         {blog.title} {blog.author}
         <button onClick={toggleVisibility}>view</button>
       </div>
-      <div style={showWhenVisible}>
+      <div style={showWhenVisible} className="blogExpandedDiv">
         {blog.title} {blog.author}
         <button onClick={toggleVisibility}>hide</button>
         <div><a href={blog.url}>{blog.url}</a></div>
-        <div>{blog.likes} likes <button onClick={handleLikes}>like</button></div>
+        <div>{blog.likes} likes <button onClick={() => handleLikes(blog)}>like</button></div>
         <div>{blog.user.name}</div>
         {blog.user.username === user.username &&
-                    <button onClick={handleRemove}>remove</button>}
+                    <button onClick={() => handleRemove(blog)}>remove</button>}
       </div>
     </div>
   )

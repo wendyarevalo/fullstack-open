@@ -65,6 +65,24 @@ const App = () => {
     setUser(null)
   }
 
+  const handleLikes = async (blogObject) => {
+    const newBlog = {
+      title: blogObject.title,
+      author: blogObject.author,
+      url: blogObject.url,
+      likes: blogObject.likes + 1
+    }
+    await blogService.update(blogObject.id, newBlog)
+    setUpdate(Math.random())
+  }
+  const handleRemove = async (blogObject) => {
+    if (!window.confirm(`Remove blog "${blogObject.title}" by ${blogObject.author}`)) {
+      return
+    }
+    await blogService.deleteBlog(blogObject.id)
+    setUpdate(Math.random())
+  }
+
   const createBlog = async (blogObject) => {
     try {
       blogFormRef.current.toggleVisibility()
@@ -89,7 +107,7 @@ const App = () => {
     <div>
       {blogs.sort((a, b) => b.likes - a.likes)
         .map(blog =>
-          <Blog key={blog.id} blog={blog} user={user} setUpdate={setUpdate}/>
+          <Blog key={blog.id} blog={blog} user={user} handleLikes={handleLikes} handleRemove={handleRemove}/>
         )}
     </div>
   )
