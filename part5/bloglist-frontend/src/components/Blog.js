@@ -44,7 +44,7 @@ const Blog = ({ blog, user, setUpdate }) => {
       <div style={showWhenVisible}>
         {blog.title} {blog.author}
         <button onClick={toggleVisibility}>hide</button>
-        <div>{blog.url}</div>
+        <div><a href={blog.url}>{blog.url}</a></div>
         <div>{blog.likes} likes <button onClick={handleLikes}>like</button></div>
         <div>{blog.user.name}</div>
         {blog.user.username === user.username &&
